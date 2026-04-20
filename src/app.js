@@ -16,6 +16,22 @@ import { notFound } from './middlewares/notFound.middleware.js';
  * 7. Add errorHandler middleware (must be last!)
  * 8. Return app
  */
+
 export function createApp() {
   // Your code here
+  const app = express();
+  app.use(express.json());
+  
+  app.get('/health', (req , res) => {
+    return res.status(200).json({ ok: true });
+  })
+
+  app.use('/api/auth',authRoutes);
+  app.use('/api/users',userRoutes);
+
+  app.use(errorHandler);
+
+  return app;
 }
+
+

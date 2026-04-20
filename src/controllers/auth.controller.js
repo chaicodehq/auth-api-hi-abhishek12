@@ -1,6 +1,7 @@
-import bcrypt from 'bcryptjs';
-import { User } from '../models/user.model.js';
-import { signToken } from '../utils/jwt.js';
+import bcrypt from "bcryptjs";
+import { User } from "../models/user.model.js";
+import { signToken } from "../utils/jwt.js";
+import { json } from "express";
 
 /**
  * TODO: Register a new user
@@ -14,6 +15,34 @@ import { signToken } from '../utils/jwt.js';
 export async function register(req, res, next) {
   try {
     // Your code here
+    const { name, email, password } = req.body;
+
+    
+
+    const existingUser = await User.findOne({ email: email });
+
+    if (existingUser)
+      return res
+        .status(409)
+        .json({ error: { message: "Email already exists" } });
+
+    const salt = bcrypt.genSaltSync(10);
+    const hashPassword = bcrypt.hashSync(password, salt);
+
+    const user = await User.createUser({
+      name,
+      email,
+      hashPassword,
+    });
+
+    const token = signToken({ userId : user._id });
+
+    return (
+      res.status(200).json({ 
+        message: "user registered successfully!",
+        token
+      })
+    );
   } catch (error) {
     next(error);
   }
@@ -33,6 +62,24 @@ export async function register(req, res, next) {
 export async function login(req, res, next) {
   try {
     // Your code here
+    const {email , password} = req.body;
+    
+    const existingUser = await User.findOne({email}).select('+password').lean();
+    if(!existingUser) return res.status(401).json({error : {message : 'Invalid credentials'}});
+
+    const checkPassword = await bcrypt.compare(password , existingUser.password);
+
+    if(!checkPassword) return res.status(401).json({error : {message : 'Invalid credentials'}});
+
+    const token = signToken({userId : existingUser._id});
+
+    delete existingUser.password;
+
+    return res.status(200).json({
+      existingUser,
+      token
+    })
+
   } catch (error) {
     next(error);
   }
@@ -47,6 +94,14 @@ export async function login(req, res, next) {
 export async function me(req, res, next) {
   try {
     // Your code here
+    if(!req.user) return res.status(401).json({
+      error : {
+        message : "Unauthorized"
+      }
+    })
+    return res.status(200).json({
+      user : req.user
+    })
   } catch (error) {
     next(error);
   }

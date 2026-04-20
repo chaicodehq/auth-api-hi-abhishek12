@@ -18,4 +18,10 @@ const router = Router();
 
 // Your routes here
 
+router.get("/",authenticate , requireRole, listUsers);
+
+router.get("/:id",authenticate ,requireRole , getUser);
+
+router.delete("/:id",authenticate , requireRole , deleteUser);
+
 export default router;
