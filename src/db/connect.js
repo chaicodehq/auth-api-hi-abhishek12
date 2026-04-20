@@ -17,4 +17,3 @@ export async function connectDB(uri) {
   }
 }
 
-export {connectDB};
